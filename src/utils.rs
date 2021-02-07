@@ -2,15 +2,21 @@ pub(crate) fn extract_digits(s: &str) -> Result<(&str, &str), String> {
     take_white1(|c| c.is_ascii_digit(), s, "expected digits".to_string())
 }
 
+const WHITSPACE: &[char] = &[' ', '\n'];
+
 pub(crate) fn extract_whitespace(s: &str) -> (&str, &str) {
-    take_white(|c| c == ' ', s)
+    take_white(|c| WHITSPACE.contains(&c), s)
 }
 
 pub(crate) fn extract_whitespace1(s: &str) -> Result<(&str, &str), String> {
-    take_white1(|c| c == ' ', s, "expected a space".to_string())
+    take_white1(
+        |c| WHITSPACE.contains(&c),
+        s,
+        "expected whitespace".to_string(),
+    )
 }
 
-pub(crate) fn take_white(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
+fn take_white(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
     let extracted_end = s
         .char_indices()
         .find_map(|(idx, c)| if accept(c) { None } else { Some(idx) })
@@ -21,7 +27,7 @@ pub(crate) fn take_white(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str)
     (remainder, extracted)
 }
 
-pub(crate) fn take_white1(
+fn take_white1(
     accept: impl Fn(char) -> bool,
     s: &str,
     error_msg: String,
@@ -34,7 +40,7 @@ pub(crate) fn take_white1(
     }
 }
 
-pub(crate) fn extract_op(s: &str) -> (&str, &str) {
+fn extract_op(s: &str) -> (&str, &str) {
     match &s[0..1] {
         "+" | "-" | "*" | "/" => {}
         _ => panic!("bad operator"),
@@ -82,9 +88,6 @@ mod tests {
     fn do_not_extract_digits_when_input_is_invalid() {
         assert_eq!(extract_digits("abcd"), Err("expected digits".to_string()));
     }
-    // fn do_not_extract_anything_from_empty_input() {
-    //     assert_eq!(extract_digits(""), Ok(("", "")));
-    // }
 
     #[test]
     fn extract_digits_with_not_remainder() {
@@ -141,10 +144,15 @@ mod tests {
     }
 
     #[test]
+    fn extract_newline_or_spaces() {
+        assert_eq!(extract_whitespace(" \n \n\nabc"), ("abc", " \n \n\n"));
+    }
+
+    #[test]
     fn do_not_extract_spaces1_when_input_does_not_start_with_them() {
         assert_eq!(
             extract_whitespace1("blah"),
-            Err("expected a space".to_string())
+            Err("expected whitespace".to_string())
         )
     }
 }

@@ -1,6 +1,27 @@
-pub mod binding_def;
-pub mod binding_usage;
-pub mod env;
-pub mod expr;
-pub mod utils;
-pub mod val;
+mod binding_def;
+mod env;
+mod expr;
+mod stmt;
+mod utils;
+mod val;
+
+pub use env::Env;
+pub use val::Val;
+
+pub fn parse(s: &str) -> Result<Parse, String> {
+    let (s, stmt) = stmt::Stmt::new(s)?;
+
+    if s.is_empty() {
+        Ok(Parse(stmt))
+    } else {
+        Err("input was ot consumed fully by parser".to_string())
+    }
+}
+
+pub struct Parse(stmt::Stmt);
+
+impl Parse {
+    pub fn eval(&self, env: &mut Env) -> Result<Val, String> {
+        self.0.eval(env)
+    }
+}
