@@ -1,6 +1,7 @@
 mod binding_def;
 mod env;
 mod expr;
+mod func_def;
 mod stmt;
 mod utils;
 mod val;
@@ -14,10 +15,12 @@ pub fn parse(s: &str) -> Result<Parse, String> {
     if s.is_empty() {
         Ok(Parse(stmt))
     } else {
-        Err("input was ot consumed fully by parser".to_string())
+        dbg!(s);
+        Err("input was not consumed fully by parser".to_string())
     }
 }
 
+#[derive(Debug)]
 pub struct Parse(stmt::Stmt);
 
 impl Parse {

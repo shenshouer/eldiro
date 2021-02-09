@@ -3,7 +3,7 @@ use crate::stmt::Stmt;
 use crate::utils;
 use crate::val::Val;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Block {
     pub(crate) stmts: Vec<Stmt>,
 }
@@ -13,20 +13,12 @@ impl Block {
         let s = utils::tag("{", s)?;
         let (s, _) = utils::extract_whitespace(s);
 
-        let mut s = s;
-        let mut stmts = Vec::new();
-        while let Ok((new_s, stmt)) = Stmt::new(s) {
-            s = new_s;
-            stmts.push(stmt);
-
-            let (new_s, _) = utils::extract_whitespace(s);
-            s = new_s;
-        }
+        let (s, stmts) = utils::sequence(Stmt::new, utils::extract_whitespace, s)?;
 
         let (s, _) = utils::extract_whitespace(s);
         let s = utils::tag("}", s)?;
 
-        Ok((s, Block { stmts: stmts }))
+        Ok((s, Block { stmts }))
     }
 
     pub(crate) fn eval(&self, env: &Env) -> Result<Val, String> {
@@ -175,8 +167,8 @@ mod tests {
                     Stmt::Expr(Expr::Number(Number(100))),
                     Stmt::Expr(Expr::Number(Number(30))),
                     Stmt::Expr(Expr::Operation {
-                        lhs: Number(10),
-                        rhs: Number(7),
+                        lhs: Box::new(Expr::Number(Number(10))),
+                        rhs: Box::new(Expr::Number(Number(7))),
                         op: Op::Sub,
                     }),
                 ],

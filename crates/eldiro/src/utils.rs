@@ -16,7 +16,7 @@ pub(crate) fn extract_whitespace1(s: &str) -> Result<(&str, &str), String> {
     )
 }
 
-fn take_white(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
+pub(crate) fn take_white(accept: impl Fn(char) -> bool, s: &str) -> (&str, &str) {
     let extracted_end = s
         .char_indices()
         .find_map(|(idx, c)| if accept(c) { None } else { Some(idx) })
@@ -40,13 +40,13 @@ fn take_white1(
     }
 }
 
-fn extract_op(s: &str) -> (&str, &str) {
-    match &s[0..1] {
-        "+" | "-" | "*" | "/" => {}
-        _ => panic!("bad operator"),
-    }
-    (&s[1..], &s[0..1])
-}
+// fn extract_op(s: &str) -> (&str, &str) {
+//     match &s[0..1] {
+//         "+" | "-" | "*" | "/" => {}
+//         _ => panic!("bad operator"),
+//     }
+//     (&s[1..], &s[0..1])
+// }
 
 pub(crate) fn extract_ident(s: &str) -> Result<(&str, &str), String> {
     let input_starts_with_alphabetic = s
@@ -67,6 +67,37 @@ pub(crate) fn tag<'a, 'b>(starting_text: &'a str, s: &'b str) -> Result<&'b str,
         Ok(&s[starting_text.len()..])
     } else {
         Err(format!("expected {}", starting_text))
+    }
+}
+
+pub(crate) fn sequence<T>(
+    parser: impl Fn(&str) -> Result<(&str, T), String>,
+    separator_parser: impl Fn(&str) -> (&str, &str),
+    mut s: &str,
+) -> Result<(&str, Vec<T>), String> {
+    let mut items = Vec::new();
+
+    while let Ok((new_s, item)) = parser(s) {
+        s = new_s;
+        items.push(item);
+
+        let (new_s, _) = separator_parser(s);
+        s = new_s;
+    }
+    Ok((s, items))
+}
+
+pub(crate) fn sequence1<T>(
+    parser: impl Fn(&str) -> Result<(&str, T), String>,
+    separator_parser: impl Fn(&str) -> (&str, &str),
+    s: &str,
+) -> Result<(&str, Vec<T>), String> {
+    let (s, sequence) = sequence(parser, separator_parser, s)?;
+
+    if sequence.is_empty() {
+        Err("expected a sequence with more than one item".to_string())
+    } else {
+        Ok((s, sequence))
     }
 }
 
@@ -94,25 +125,25 @@ mod tests {
         assert_eq!(extract_digits("100"), Ok(("", "100")));
     }
 
-    #[test]
-    fn extract_plus() {
-        assert_eq!(extract_op("+2"), ("2", "+"));
-    }
+    // #[test]
+    // fn extract_plus() {
+    //     assert_eq!(extract_op("+2"), ("2", "+"));
+    // }
 
-    #[test]
-    fn extract_minus() {
-        assert_eq!(extract_op("-10"), ("10", "-"))
-    }
+    // #[test]
+    // fn extract_minus() {
+    //     assert_eq!(extract_op("-10"), ("10", "-"))
+    // }
 
-    #[test]
-    fn extract_star() {
-        assert_eq!(extract_op("*3"), ("3", "*"));
-    }
+    // #[test]
+    // fn extract_star() {
+    //     assert_eq!(extract_op("*3"), ("3", "*"));
+    // }
 
-    #[test]
-    fn extract_slash() {
-        assert_eq!(extract_op("/4"), ("4", "/"));
-    }
+    // #[test]
+    // fn extract_slash() {
+    //     assert_eq!(extract_op("/4"), ("4", "/"));
+    // }
 
     #[test]
     fn extract_spaces() {
